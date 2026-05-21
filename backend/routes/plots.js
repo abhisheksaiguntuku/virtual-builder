@@ -1,5 +1,6 @@
 import express from 'express';
-import { Plot } from '../db/schema.js';
+import mongoose from 'mongoose';
+import { Plot, User } from '../db/schema.js';
 
 const router = express.Router();
 
@@ -23,8 +24,16 @@ router.post('/save', async (req, res) => {
             return res.status(401).json({ success: false, error: 'Unauthorized: You must be logged in to save.' });
         }
 
+        let resolvedUserId = userId;
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            const realUser = await User.findOne({ $or: [{ googleId: userId }, { phoneNumber: userId }] });
+            if (realUser) {
+                resolvedUserId = realUser._id;
+            }
+        }
+
         const newPlot = new Plot({
-            userId,
+            userId: resolvedUserId,
             length: Number(formData.plotLength),
             width: Number(formData.plotWidth),
             facing: formData.plotFacing,
@@ -56,13 +65,22 @@ router.post('/save', async (req, res) => {
 router.get('/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        const plots = await Plot.find({ userId }).sort({ createdAt: -1 });
+        let resolvedUserId = userId;
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            const realUser = await User.findOne({ $or: [{ googleId: userId }, { phoneNumber: userId }] });
+            if (realUser) {
+                resolvedUserId = realUser._id;
+            }
+        }
+
+        const plots = await Plot.find({ userId: resolvedUserId }).sort({ createdAt: -1 });
         
         res.json({
             success: true,
             plots
         });
     } catch (error) {
+        console.error('Fetch Plots Error:', error);
         res.status(500).json({ success: false, error: 'Failed to fetch saved projects' });
     }
 });

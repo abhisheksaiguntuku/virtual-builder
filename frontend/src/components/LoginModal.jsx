@@ -29,7 +29,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       const data = await res.json();
 
       if (data.success) {
-        onLoginSuccess({ ...userData, id: data.user._id || userData.id });
+        onLoginSuccess({ ...userData, id: data.user.id || data.user._id || userData.id });
         onClose();
       } else {
         alert('Login failed. Please try again.');
