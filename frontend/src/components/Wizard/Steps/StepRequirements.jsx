@@ -42,7 +42,8 @@ export default function StepRequirements({ data, update }) {
     setIsEnhancing(true);
     setEnhanceError('');
     try {
-      const res = await fetch('http://localhost:5000/api/ai/ask', {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${baseUrl}/ai/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

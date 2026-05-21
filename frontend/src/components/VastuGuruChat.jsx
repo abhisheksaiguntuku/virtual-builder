@@ -91,7 +91,8 @@ export default function VastuGuruChat() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/ai/ask', {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${baseUrl}/ai/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: `You are Vastu Guru, an expert in Indian Vastu Shastra and construction in Vizianagaram. Answer concisely and helpfully: ${text}`, projectContext: 'Vastu and construction query' })

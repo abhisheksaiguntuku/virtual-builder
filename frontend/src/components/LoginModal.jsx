@@ -20,7 +20,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       };
 
       // Save user to MongoDB via backend
-      const res = await fetch('http://localhost:5000/api/auth/google', {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${baseUrl}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)

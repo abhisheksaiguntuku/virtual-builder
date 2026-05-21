@@ -235,7 +235,8 @@ Please write exactly 4 distinct sections:
 4. ARCHITECTURAL LIGHTING SUGGESTIONS (Up-down exterior focus lights, LED strip niches, wall sconces).
 Keep the tone highly professional, precise and tailored to Indian homes.`;
 
-      const response = await fetch('http://localhost:5000/api/ai/ask', {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${baseUrl}/ai/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -279,7 +280,8 @@ Please write exactly 4 distinct sections:
 4. AMBIENT & TASK LIGHTING (Profile LED strip placement, sensor-based internal wardrobe lights, warm spot highlights, decorative trim).
 Keep the tone highly professional, precise and tailored to premium Indian modular homes.`;
 
-      const response = await fetch('http://localhost:5000/api/ai/ask', {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${baseUrl}/ai/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
