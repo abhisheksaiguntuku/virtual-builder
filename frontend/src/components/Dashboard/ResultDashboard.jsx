@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Calculator, Compass, Users, Map, Box as BoxIcon, Activity, Sparkles,
-  Download, Save, ArrowLeft, Phone, BadgePercent, CheckCircle, AlertTriangle, Info, Plus, Trash, IndianRupee
+  Download, Save, ArrowLeft, Phone, BadgePercent, CheckCircle, AlertTriangle, Info, Plus, Trash, IndianRupee, FileText
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import CostCalculator from './CostCalculator';
@@ -17,6 +17,29 @@ export default function ResultDashboard({ data, apiData, user, openLoginModal, o
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeProject, setActiveProject] = useState(savedProject || null);
+  const [checkedDocs, setCheckedDocs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ghen_checked_docs');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('ghen_checked_docs', JSON.stringify(checkedDocs));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [checkedDocs]);
+
+  const toggleDoc = (docId) => {
+    setCheckedDocs(prev => ({
+      ...prev,
+      [docId]: !prev[docId]
+    }));
+  };
 
   // Fallbacks if data or API response is missing
   const resolvedData = data || activeProject?.formData || {};
@@ -689,7 +712,8 @@ Keep the tone highly professional, precise and tailored to premium Indian modula
     if (!user) { openLoginModal(); return; }
     setIsSaving(true);
     try {
-      const response = await fetch('http://localhost:5000/api/plots/save', {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${baseUrl}/plots/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -731,6 +755,7 @@ Keep the tone highly professional, precise and tailored to premium Indian modula
     { id: 'elevation', label: 'AI Exterior Design',    icon: <Sparkles size={16} /> },
     { id: 'interiors', label: 'AI Interior Design',    icon: <Sparkles size={16} /> },
     { id: 'timeline',  label: 'Construction Tracker',   icon: <Activity size={16} /> },
+    { id: 'approvals', label: '📋 Approvals & Docs',   icon: <FileText size={16} /> },
   ];
 
   const currentSelectedRoom = rooms2D.find(r => r.id === selectedRoomId);
@@ -1382,6 +1407,187 @@ Keep the tone highly professional, precise and tailored to premium Indian modula
         {activeTab === 'timeline' && (
           <ConstructionTracker data={resolvedData} activeProject={activeProject} />
         )}
+
+        {/* TAB: APPROVALS & DOCUMENTS CHECKLIST */}
+        {activeTab === 'approvals' && (() => {
+          const approvalSections = [
+            {
+              id: 'land',
+              title: '🌱 1. Land Ownership & NA Conversion',
+              description: 'Ensure legal clearance and residential zoning conversion before designing.',
+              items: [
+                { id: 'sale_deed', name: 'Registered Sale Deed / Title Deed', desc: 'Primary legal proof of land ownership.' },
+                { id: 'extract_712', name: '7/12 Extract (Patta / Khata Certificate)', desc: 'Official revenue document detailing landowners.' },
+                { id: 'na_cert', name: 'Non-Agricultural (NA) Certificate', desc: 'Crucial if land classification is converted from agriculture.' },
+                { id: 'tax_receipts', name: 'Cleared Property Tax Paid Receipts', desc: 'Proves zero pending land tax liabilities.' },
+                { id: 'encumbrance', name: 'Encumbrance Certificate (EC)', desc: 'Certifies land is free from mortgages/disputes.' }
+              ]
+            },
+            {
+              id: 'plan_sanction',
+              title: '📐 2. Municipal Building Plan Sanction',
+              description: 'Get architectural approval from your local Corporation (e.g. BBMP, BMC) or Gram Panchayat.',
+              items: [
+                { id: 'arch_drawings', name: 'Scale Architectural blueprints', desc: 'Full structural layouts drawn by a registered architect.' },
+                { id: 'struct_stability', name: 'Structural Stability Certificate', desc: 'Issued by an empanelled structural engineer.' },
+                { id: 'land_survey', name: 'Certified Land Survey Boundary Map', desc: 'Verifies the physical boundaries of your plot.' },
+                { id: 'commencement', name: 'Commencement Certificate', desc: 'Official approval to dig the foundation.' }
+              ]
+            },
+            {
+              id: 'utility_electric',
+              title: '⚡ 3. Electricity Board Connection (NOC)',
+              description: 'Required for a temporary construction line, later converted to a residential meter.',
+              items: [
+                { id: 'elec_app', name: 'Connection Request Application Form', desc: 'Obtained from State Power Discom (e.g. MSEB, BESCOM).' },
+                { id: 'elec_id_proof', name: 'Applicant Identity Proof (Aadhaar/PAN)', desc: 'Identifies the land owner.' },
+                { id: 'elec_land_proof', name: 'Sale Deed Copy & Current Tax Receipt', desc: 'Verifies ownership of property requesting power.' },
+                { id: 'elec_plan_copy', name: 'Approved Building Plan copy', desc: 'Ensures the construction is fully authorized.' },
+                { id: 'elec_load_calc', name: 'Load Requirement Sheet', desc: 'Certified load estimate by a licensed electrical contractor.' }
+              ]
+            },
+            {
+              id: 'utility_water',
+              title: '💧 4. Water & Sewage Connection NOC',
+              description: 'Approval from Municipal Water Board for local tap water supply or borewell permission.',
+              items: [
+                { id: 'water_tax_clearance', name: 'Water Board Connection Application', desc: 'Application form with cleared past dues.' },
+                { id: 'plumbing_layout', name: 'Plumbing & Drainage Layout Diagram', desc: 'Shows connection route to the local sewage main.' },
+                { id: 'borewell_permission', name: 'Borewell Drilling NOC (if applicable)', desc: 'Required in notified ground-water sensitive zones.' }
+              ]
+            },
+            {
+              id: 'completion',
+              title: '🔑 5. Occupancy Certificate (OC)',
+              description: 'Issued by municipal body after construction to verify the structure conforms to plans. Moving in without an OC is illegal.',
+              items: [
+                { id: 'completion_cert', name: 'Builder/Architect Completion Certificate', desc: 'Certifies physical construction matches approved designs.' },
+                { id: 'safety_noc', name: 'Fire Safety NOC (for multi-story houses)', desc: 'NOC from local fire brigade.' },
+                { id: 'photo_completion', name: 'Finished Property Site Photos', desc: 'Front, sides, sewage, and rainwater harvesting structures.' }
+              ]
+            }
+          ];
+
+          // Calculate progress
+          const totalDocs = approvalSections.reduce((acc, sec) => acc + sec.items.length, 0);
+          const checkedCount = approvalSections.reduce((acc, sec) => acc + sec.items.filter(item => checkedDocs[item.id]).length, 0);
+          const percentCollected = totalDocs > 0 ? Math.round((checkedCount / totalDocs) * 100) : 0;
+
+          return (
+            <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              
+              {/* Progress HUD */}
+              <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', background: 'linear-gradient(135deg, rgba(37,99,235,0.06), rgba(139,92,246,0.06))', border: '1px solid rgba(37,99,235,0.15)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '4px' }}>📋 Document & Approvals Checklist</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Gather these documents before visiting municipal offices to avoid multiple trips!</p>
+                  </div>
+                  <div style={{ textAlign: 'right', minWidth: '120px' }}>
+                    <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary-color)' }}>{checkedCount} / {totalDocs}</span>
+                    <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>DOCUMENTS COLLECTED</span>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: '600', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    <span>Preparation Progress</span>
+                    <span>{percentCollected}% Complete</span>
+                  </div>
+                  <div style={{ width: '100%', height: '10px', backgroundColor: 'var(--border-color)', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div style={{ width: `${percentCollected}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '12px 16px', backgroundColor: 'rgba(59,130,246,0.08)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '1.2rem' }}>💡</span>
+                  <span><strong>Pro Tip:</strong> Take at least <strong>3 self-attested photocopies</strong> of each document, along with 4 passport-size photographs, before going to any government desk! Your checkmarks will be saved automatically.</span>
+                </div>
+              </div>
+
+              {/* Sections Grid */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {approvalSections.map(section => {
+                  const sectionTotal = section.items.length;
+                  const sectionChecked = section.items.filter(item => checkedDocs[item.id]).length;
+
+                  return (
+                    <div key={section.id} className="card" style={{ padding: '24px', border: '1px solid var(--border-color)' }}>
+                      {/* Section Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                        <div>
+                          <h4 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-color)', marginBottom: '4px' }}>{section.title}</h4>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{section.description}</p>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', padding: '4px 10px', backgroundColor: sectionChecked === sectionTotal ? 'rgba(16,185,129,0.1)' : 'rgba(37,99,235,0.08)', color: sectionChecked === sectionTotal ? 'var(--success-color)' : 'var(--primary-color)', borderRadius: '20px', fontWeight: '700' }}>
+                          {sectionChecked} / {sectionTotal} Done
+                        </span>
+                      </div>
+
+                      {/* Documents List */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {section.items.map(item => {
+                          const isChecked = !!checkedDocs[item.id];
+                          return (
+                            <div 
+                              key={item.id} 
+                              onClick={() => toggleDoc(item.id)}
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '14px', 
+                                padding: '12px 16px', 
+                                backgroundColor: isChecked ? 'rgba(16,185,129,0.04)' : 'var(--bg-color)', 
+                                border: `1px solid ${isChecked ? 'rgba(16,185,129,0.2)' : 'var(--border-color)'}`,
+                                borderRadius: '8px', 
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={e => {
+                                if (!isChecked) e.currentTarget.style.borderColor = 'var(--primary-color)';
+                              }}
+                              onMouseLeave={e => {
+                                if (!isChecked) e.currentTarget.style.borderColor = 'var(--border-color)';
+                              }}
+                            >
+                              {/* Custom Styled Checkbox */}
+                              <div style={{ 
+                                width: '20px', 
+                                height: '20px', 
+                                borderRadius: '4px', 
+                                border: `2px solid ${isChecked ? 'var(--success-color)' : 'var(--text-muted)'}`,
+                                backgroundColor: isChecked ? 'var(--success-color)' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s',
+                                flexShrink: 0
+                              }}>
+                                {isChecked && <span style={{ color: '#fff', fontSize: '0.75rem', fontWeight: 'bold' }}>✓</span>}
+                              </div>
+
+                              {/* Title and Description */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-color)', textDecoration: isChecked ? 'line-through' : 'none', opacity: isChecked ? 0.75 : 1 }}>
+                                  {item.name}
+                                </span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: isChecked ? 0.6 : 0.8 }}>
+                                  {item.desc}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          );
+        })()}
 
         {/* UPGRADE 6: Material Compare — shown in 3D tab as floating hint */}
         {activeTab === '3d' && (
