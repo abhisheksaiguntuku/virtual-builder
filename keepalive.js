@@ -6,8 +6,8 @@ const https = require('https');
 // Replace these with your actual deployed Render / Vercel URLs
 // ══════════════════════════════════════════════════════
 const TARGETS = [
-  'https://virtual-builder-backend.onrender.com/api/status', // Example Render backend
-  'https://virtual-builder.vercel.app',                      // Example Vercel/Netlify frontend
+  'https://virtual-builder-backend.onrender.com/health', // Active Render backend health check
+  'https://virtual-builder.vercel.app',                  // Vercel frontend
 ];
 
 console.log(`[Keep-Alive] Triggered at: ${new Date().toISOString()}`);
